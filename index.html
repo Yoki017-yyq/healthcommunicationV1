@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>健康科普剧本生成器</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary-color: #4caf50;
+        --secondary-color: #8bc34a;
+        --accent-color: #cddc39;
+        --text-color: #2e7d32;
+        --light-bg: #f1f8e9;
+      }
+
+      body {
+        background-color: var(--light-bg);
+        color: var(--text-color);
+      }
+
+      .navbar {
+        background-color: var(--primary-color) !important;
+      }
+
+      .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+      }
+
+      .btn-primary:hover {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+      }
+
+      .card {
+        border-color: var(--secondary-color);
+        background-color: white;
+      }
+
+      .card-header {
+        background-color: var(--light-bg);
+        border-bottom-color: var(--secondary-color);
+      }
+      .page {
+        display: none;
+      }
+      .page.active {
+        display: block;
+      }
+      .chat-window {
+        height: 400px;
+        overflow-y: auto;
+        border: 1px solid var(--secondary-color);
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        background-color: white;
+      }
+      .version-history {
+        height: 200px;
+        overflow-y: auto;
+      }
+      .nav-link {
+        cursor: pointer;
+      }
+      #scriptEditSection {
+        display: none;
+      }
+
+      .keyword-tag {
+        background-color: var(--light-bg);
+        border: 1px solid var(--secondary-color);
+        color: var(--text-color);
+        padding: 2px 8px;
+        border-radius: 12px;
+        margin: 2px;
+        display: inline-block;
+      }
+
+      .keyword-tag .remove-keyword {
+        margin-left: 5px;
+        cursor: pointer;
+        color: var(--text-color);
+      }
+
+      /* 添加参考标签样式 */
+      .reference-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .reference-tag {
+        background-color: var(--light-bg);
+        border: 1px solid var(--secondary-color);
+        color: var(--text-color);
+        padding: 4px 12px;
+        border-radius: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+      }
+
+      .reference-tag:hover {
+        background-color: var(--secondary-color);
+        color: white;
+        transform: translateY(-2px);
+      }
+
+      .reference-tag:active {
+        transform: translateY(0);
+      }
+
+      /* 新增选择按钮样式 */
+      .choice-container {
+        width: 100%;
+      }
+
+      .choice-btn {
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        text-align: left;
+      }
+
+      .choice-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .choice-btn:disabled {
+        transform: none;
+        box-shadow: none;
+      }
+
+      .choice-btn .badge {
+        font-size: 0.8em;
+        flex-shrink: 0;
+      }
+
+      /* 消息样式 */
+      .message {
+        border-radius: 15px;
+        margin: 5px 0;
+        word-wrap: break-word;
+      }
+      .message.user {
+        border-top-right-radius: 5px;
+      }
+      .message.ai {
+        border-top-left-radius: 5px;
+      }
+      .message.system {
+        background-color: #e3f2fd !important;
+        color: #1565c0;
+        font-style: italic;
+        border-left: 4px solid #2196f3;
+      }
+
+      /* 快捷操作按钮 */
+      .quick-actions {
+        margin-bottom: 15px;
+      }
+      .quick-actions .btn {
+        margin-right: 5px;
+        margin-bottom: 5px;
+      }
+
+      /* 滚动条样式 */
+      .chat-window::-webkit-scrollbar {
+        width: 8px;
+      }
+      .chat-window::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+      }
+      .chat-window::-webkit-scrollbar-thumb {
+        background: var(--secondary-color);
+        border-radius: 4px;
+      }
+      .chat-window::-webkit-scrollbar-thumb:hover {
+        background: var(--primary-color);
+      }
+
+      /* 版本历史样式 */
+      .version-history .btn {
+        width: 100%;
+        text-align: left;
+        margin-bottom: 5px;
+      }
+
+      /* 动画效果 */
+      .alert {
+        animation: slideInDown 0.3s ease-in-out;
+      }
+
+      @keyframes slideInDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* 加载动画 */
+      .spinner-border {
+        width: 2rem;
+        height: 2rem;
+      }
+
+      /* 编辑选项样式 */
+      .editing-options {
+        background: linear-gradient(135deg, var(--light-bg) 0%, #ffffff 100%);
+        border: 1px solid var(--secondary-color);
+        border-radius: 10px;
+      }
+
+      /* 流程图样式 */
+      .flowchart-container {
+        background: white;
+        border: 1px solid var(--secondary-color);
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        overflow-x: auto;
+      }
+
+      .flowchart-node {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color) 0%,
+          var(--secondary-color) 100%
+        );
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin: 10px;
+        text-align: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        min-width: 150px;
+        position: relative;
+      }
+
+      .flowchart-node:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .flowchart-node.start {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+      }
+
+      .flowchart-node.development {
+        background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+      }
+
+      .flowchart-node.climax {
+        background: linear-gradient(135deg, #45b7d1 0%, #96c93d 100%);
+      }
+
+      .flowchart-node.ending {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      }
+
+      .flowchart-arrow {
+        color: var(--primary-color);
+        font-size: 1.5rem;
+        margin: 0 10px;
+      }
+
+      .flowchart-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+
+      /* 专业词汇样式 */
+      .terminology-container {
+        max-height: 500px;
+        overflow-y: auto;
+      }
+
+      .terminology-item {
+        background: white;
+        border: 1px solid var(--secondary-color);
+        border-radius: 8px;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+      }
+
+      .terminology-item:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transform: translateY(-1px);
+      }
+
+      .terminology-header {
+        padding: 15px;
+        background: var(--light-bg);
+        border-bottom: 1px solid var(--secondary-color);
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .terminology-term {
+        font-weight: bold;
+        color: var(--primary-color);
+        font-size: 1.1rem;
+      }
+
+      .terminology-frequency {
+        background: var(--primary-color);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        margin-left: 10px;
+      }
+
+      .terminology-actions {
+        display: flex;
+        gap: 5px;
+      }
+
+      .terminology-content {
+        padding: 15px;
+        border-top: 1px solid #eee;
+        background: #fafafa;
+      }
+
+      .terminology-description {
+        color: #666;
+        margin-bottom: 10px;
+        line-height: 1.6;
+      }
+
+      .search-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 20px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .search-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        color: white;
+      }
+
+      /* 统计卡片样式 */
+      .stats-card {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color) 0%,
+          var(--secondary-color) 100%
+        );
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .stats-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .stats-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+      }
+
+      /* 导出按钮样式 */
+      .export-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+      }
+
+      .export-btn {
+        background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+        border: none;
+        color: var(--text-color);
+        padding: 10px 20px;
+        border-radius: 25px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .export-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        color: var(--text-color);
+      }
+
+      /* 响应式调整 */
+      @media (max-width: 768px) {
+        .choice-btn {
+          font-size: 0.9rem;
+        }
+
+        .reference-tag {
+          font-size: 0.8rem;
+          padding: 3px 8px;
+        }
+
+        .quick-actions .btn {
+          font-size: 0.8rem;
+          padding: 0.25rem 0.5rem;
+        }
+
+        .flowchart-row {
+          flex-direction: column;
+        }
+
+        .flowchart-arrow {
+          transform: rotate(90deg);
+        }
+
+        .flowchart-node {
+          margin: 5px 0;
+          min-width: 200px;
+        }
+
+        .export-buttons {
+          flex-direction: column;
+        }
+
+        .terminology-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+      <div class="container">
+        <a class="navbar-brand" href="#">
+          <i class="fas fa-heartbeat"></i> 健康科普剧本生成器
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link" onclick="showPage('home')">首页</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" onclick="showPage('workspace')">工作区</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" onclick="showPage('analysis')">剧本分析</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- 首页 -->
+    <div id="home" class="page active container mt-5">
+      <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+          <h1 class="site-title">健康科普剧本生成器</h1>
+          <p class="site-subtitle">让健康知识传播更有趣</p>
+          <p class="lead mb-5">
+            输入健康相关的时事或关键词，我们将帮您生成生动有趣的科普剧本。
+          </p>
+          <div class="mb-4">
+            <div
+              class="d-flex justify-content-center align-items-center gap-3 flex-wrap"
+            >
+              <div class="text-center">
+                <i class="fas fa-file-alt fa-2x text-primary mb-2"></i>
+                <div class="small">大纲预览</div>
+              </div>
+              <i class="fas fa-arrow-right text-muted"></i>
+              <div class="text-center">
+                <i class="fas fa-route fa-2x text-primary mb-2"></i>
+                <div class="small">故事走向</div>
+              </div>
+              <i class="fas fa-arrow-right text-muted"></i>
+              <div class="text-center">
+                <i class="fas fa-theater-masks fa-2x text-primary mb-2"></i>
+                <div class="small">完整剧本</div>
+              </div>
+              <i class="fas fa-arrow-right text-muted"></i>
+              <div class="text-center">
+                <i class="fas fa-edit fa-2x text-primary mb-2"></i>
+                <div class="small">修改编辑</div>
+              </div>
+            </div>
+          </div>
+          <button
+            class="btn btn-primary btn-lg"
+            onclick="showPage('workspace')"
+          >
+            <i class="fas fa-pencil-alt me-2"></i>开始创作
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 工作区 -->
+    <div id="workspace" class="page container mt-5">
+      <div class="row">
+        <!-- 左侧：健康主题输入区 -->
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">
+                <i class="fas fa-pencil-alt me-2"></i>健康主题输入
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label">输入健康相关的时事或关键词</label>
+                <textarea
+                  id="novelInput"
+                  class="form-control"
+                  rows="5"
+                  placeholder="例如：新冠疫苗接种注意事项、健康饮食指南、运动健身建议等..."
+                ></textarea>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">或上传文件</label>
+                <input
+                  type="file"
+                  class="form-control"
+                  id="novelFile"
+                  accept=".txt,.docx,.pdf"
+                />
+              </div>
+              <button class="btn btn-primary w-100" onclick="convertNovel()">
+                <i class="fas fa-magic me-2"></i>开始生成剧本
+              </button>
+            </div>
+          </div>
+
+          <!-- 关键词分析区 -->
+          <div class="card mt-3">
+            <div class="card-header">
+              <h5 class="mb-0"><i class="fas fa-tags me-2"></i>关键词分析</h5>
+            </div>
+            <div class="card-body">
+              <div id="keywordsContainer" class="mb-3">
+                <!-- 关键词将在这里动态显示 -->
+              </div>
+              <div class="input-group">
+                <input
+                  type="text"
+                  class="form-control"
+                  id="keywordInput"
+                  placeholder="添加自定义关键词..."
+                  onkeydown="if(event.keyCode==13){addKeyword();}"
+                />
+                <button class="btn btn-outline-primary" onclick="addKeyword()">
+                  <i class="fas fa-plus"></i> 添加
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 参考选项区 -->
+          <div class="card mt-3">
+            <div class="card-header">
+              <h5 class="mb-0">
+                <i class="fas fa-lightbulb me-2"></i>创作参考
+              </h5>
+            </div>
+            <div class="card-body">
+              <!-- 常见健康关键词 -->
+              <div class="mb-4">
+                <h6 class="mb-2">常见健康关键词</h6>
+                <div class="reference-tags">
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceKeyword('预防保健')"
+                    >预防保健</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceKeyword('营养均衡')"
+                    >营养均衡</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceKeyword('运动健身')"
+                    >运动健身</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceKeyword('心理健康')"
+                    >心理健康</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceKeyword('慢性病管理')"
+                    >慢性病管理</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceKeyword('急救知识')"
+                    >急救知识</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceKeyword('中医养生')"
+                    >中医养生</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceKeyword('睡眠健康')"
+                    >睡眠健康</span
+                  >
+                </div>
+              </div>
+
+              <!-- 情景剧本类型 -->
+              <div class="mb-4">
+                <h6 class="mb-2">情景剧本类型</h6>
+                <div class="reference-tags">
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceType('科普讲座')"
+                    >科普讲座</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceType('情景对话')"
+                    >情景对话</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceType('互动问答')"
+                    >互动问答</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceType('案例分析')"
+                    >案例分析</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceType('角色扮演')"
+                    >角色扮演</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceType('专家访谈')"
+                    >专家访谈</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceType('生活场景')"
+                    >生活场景</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceType('趣味小品')"
+                    >趣味小品</span
+                  >
+                </div>
+              </div>
+
+              <!-- 语言风格 -->
+              <div class="mb-4">
+                <h6 class="mb-2">语言风格</h6>
+                <div class="reference-tags">
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceStyle('专业严谨')"
+                    >专业严谨</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceStyle('通俗易懂')"
+                    >通俗易懂</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceStyle('生动活泼')"
+                    >生动活泼</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceStyle('幽默风趣')"
+                    >幽默风趣</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceStyle('温暖亲切')"
+                    >温暖亲切</span
+                  >
+                  <span
+                    class="reference-tag"
+                    onclick="addReferenceStyle('互动性强')"
+                    >互动性强</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧：剧本编辑区 -->
+        <div class="col-md-6">
+          <div class="card">
+            <div
+              class="card-header d-flex justify-content-between align-items-center"
+            >
+              <h5 class="mb-0">
+                <i class="fas fa-theater-masks me-2"></i>剧本工作区
+              </h5>
+              <div class="d-flex gap-2">
+                <button
+                  class="btn btn-outline-info btn-sm"
+                  onclick="goToAnalysis()"
+                  id="analysisBtn"
+                  style="display: none"
+                >
+                  <i class="fas fa-chart-line"></i> 分析
+                </button>
+                <button
+                  class="btn btn-outline-danger btn-sm"
+                  onclick="clearWorkspace()"
+                >
+                  <i class="fas fa-trash-alt"></i> 清除
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <!-- 对话区域 -->
+              <div id="scriptWorkspace" class="chat-window">
+                <div class="text-center text-muted py-5">
+                  <i
+                    class="fas fa-heartbeat fa-3x mb-3"
+                    style="color: var(--primary-color)"
+                  ></i>
+                  <h5>欢迎使用健康科普剧本生成器</h5>
+                  <p class="mb-0">请在左侧输入健康相关的主题</p>
+                  <p class="small">我将为您生成专业的科普剧本</p>
+                </div>
+              </div>
+
+              <!-- 快捷指令按钮 -->
+              <div
+                class="quick-actions"
+                id="quickActions"
+                style="display: none"
+              >
+                <div class="d-flex flex-wrap gap-2">
+                  <button
+                    class="btn btn-sm btn-outline-primary"
+                    onclick="useQuickAction('增加更多专业解释')"
+                  >
+                    <i class="fas fa-microscope"></i> 专业解释
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-primary"
+                    onclick="useQuickAction('添加实际案例')"
+                  >
+                    <i class="fas fa-clipboard-list"></i> 添加案例
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-primary"
+                    onclick="useQuickAction('增加互动环节')"
+                  >
+                    <i class="fas fa-handshake"></i> 互动环节
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-primary"
+                    onclick="useQuickAction('加入趣味元素')"
+                  >
+                    <i class="fas fa-laugh"></i> 趣味元素
+                  </button>
+                </div>
+              </div>
+
+              <!-- 输入区域 -->
+              <div class="chat-input-area">
+                <div class="input-group">
+                  <textarea
+                    class="form-control"
+                    id="scriptInput"
+                    placeholder="在剧本生成后，您可以在这里输入修改建议..."
+                    rows="2"
+                    style="resize: none"
+                    onkeydown="if(event.keyCode==13 && !event.shiftKey){event.preventDefault(); sendScriptMessage();}"
+                    disabled
+                  ></textarea>
+                  <button
+                    class="btn btn-primary"
+                    onclick="sendScriptMessage()"
+                    disabled
+                    id="sendButton"
+                  >
+                    <i class="fas fa-paper-plane"></i>
+                  </button>
+                </div>
+                <small class="text-muted mt-1">
+                  <i class="fas fa-info-circle"></i>
+                  按Enter发送，Shift+Enter换行
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <!-- 版本历史 -->
+          <div class="card mt-3">
+            <div
+              class="card-header d-flex justify-content-between align-items-center"
+            >
+              <h5 class="mb-0"><i class="fas fa-history me-2"></i>版本历史</h5>
+              <span class="badge bg-primary" id="versionCount">0 个版本</span>
+            </div>
+            <div class="card-body">
+              <div class="version-history" id="versionHistory">
+                <div class="text-center text-muted py-3">
+                  <i class="fas fa-clock"></i>
+                  <p class="mb-0 small">暂无历史版本</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 剧本分析页面 -->
+    <div id="analysis" class="page container mt-5">
+      <div class="row">
+        <!-- 左侧：流程图 -->
+        <div class="col-lg-8">
+          <div class="card">
+            <div
+              class="card-header d-flex justify-content-between align-items-center"
+            >
+              <h5 class="mb-0">
+                <i class="fas fa-project-diagram me-2"></i>剧本流程图
+              </h5>
+              <div class="export-buttons">
+                <button
+                  class="btn btn-sm btn-outline-primary"
+                  onclick="exportFlowchart()"
+                >
+                  <i class="fas fa-download"></i> 导出流程图
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="flowchartContainer">
+                <div class="text-center text-muted py-5">
+                  <i class="fas fa-exclamation-circle fa-2x mb-3"></i>
+                  <h6>暂无剧本数据</h6>
+                  <p class="mb-0">请先在工作区生成剧本</p>
+                  <button
+                    class="btn btn-primary mt-3"
+                    onclick="showPage('workspace')"
+                  >
+                    <i class="fas fa-arrow-left me-2"></i>返回工作区
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 统计信息 -->
+          <div class="row mt-4" id="statsContainer" style="display: none">
+            <div class="col-md-3">
+              <div class="stats-card">
+                <div class="stats-number" id="wordCount">0</div>
+                <div class="stats-label">总字数</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stats-card">
+                <div class="stats-number" id="sceneCount">0</div>
+                <div class="stats-label">场景数</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stats-card">
+                <div class="stats-number" id="characterCount">0</div>
+                <div class="stats-label">角色数</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stats-card">
+                <div class="stats-number" id="termCount">0</div>
+                <div class="stats-label">专业词汇</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧：专业词汇 -->
+        <div class="col-lg-4">
+          <div class="card">
+            <div
+              class="card-header d-flex justify-content-between align-items-center"
+            >
+              <h5 class="mb-0">
+                <i class="fas fa-book-medical me-2"></i>专业词汇解析
+              </h5>
+              <button
+                class="btn btn-sm btn-outline-success"
+                onclick="exportTerminology()"
+              >
+                <i class="fas fa-file-export"></i> 导出
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="terminology-container" id="terminologyContainer">
+                <div class="text-center text-muted py-5">
+                  <i class="fas fa-book fa-2x mb-3"></i>
+                  <h6>暂无专业词汇</h6>
+                  <p class="mb-0 small">剧本生成后将自动提取专业词汇</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Marked.js -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- 自定义JS -->
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
